@@ -1,0 +1,14 @@
+# Configuração local. Para usar no PowerShell: mvn spring-boot:run "-Dspring-boot.run.profiles=local"
+#
+# Usa localhost em vez do nome do PC (evita problema de resolução de nome).
+# Com o SQL Server Browser em execução, o driver descobre a porta do SQLEXPRESS.
+#
+# Se ainda der timeout, use a porta TCP direta (comente a linha abaixo e descomente a outra).
+# A porta está em: SQL Server Configuration Manager → Protocols for SQLEXPRESS → TCP/IP → IPAll → TCP Port.
+
+spring:
+  datasource:
+    url: jdbc:sqlserver://localhost;instanceName=SQLEXPRESS;databaseName=CORRECAO;trustServerCertificate=true
+    # url: jdbc:sqlserver://localhost:1433;databaseName=CORRECAO;trustServerCertificate=true
+    username: app_elementar
+    password: '!M19101993'

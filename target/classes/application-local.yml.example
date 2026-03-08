@@ -1,0 +1,21 @@
+# Copie este arquivo para application-local.yml e ajuste com os seus dados.
+# O application-local.yml não vai para o Git (coloque no .gitignore se quiser).
+#
+# Se o SQL Server está nesta máquina, tente uma destas URLs:
+
+# Opção 1: localhost com instância nomeada
+spring:
+  datasource:
+    url: jdbc:sqlserver://localhost;instanceName=SQLEXPRESS;databaseName=CORRECAO
+    username: app_elementar
+    password: "!M19101993"
+
+# Opção 2: se souber a porta do SQLEXPRESS (veja no SQL Server Configuration Manager)
+# spring:
+#   datasource:
+#     url: jdbc:sqlserver://localhost:1433;databaseName=CORRECAO
+
+# Opção 3: usar o nome real do seu PC (substitua NOME_DO_SEU_PC)
+# spring:
+#   datasource:
+#     url: jdbc:sqlserver://NOME_DO_SEU_PC\\SQLEXPRESS;databaseName=CORRECAO

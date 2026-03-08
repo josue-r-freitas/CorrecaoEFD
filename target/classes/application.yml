@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: correcao-efd
+  datasource:
+    url: jdbc:sqlserver://${DB_HOST:DESKTOP-P13INJM\\SQLEXPRESS};databaseName=${DB_NAME:CORRECAO};trustServerCertificate=true
+    username: ${DB_USER:app_elementar}
+    # Senha entre aspas porque começa com ! (evita problema no YAML)
+    password: ${DB_PASSWORD:'!M19101993'}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Nome do arquivo EFD importado (usado para gerar o nome do EFD corrigido)
+# Pode ser sobrescrito via parâmetro no request de correção
+efd:
+  encoding: ISO-8859-1

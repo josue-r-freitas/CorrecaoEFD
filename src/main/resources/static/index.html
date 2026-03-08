@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correção EFD – Estoque ICMS/IPI</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --card: #fff;
+            --border: #ddd;
+            --primary: #0d6efd;
+            --success: #198754;
+            --danger: #dc3545;
+            --muted: #6c757d;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin: 0; padding: 1.5rem; color: #1a1a1a; }
+        .container { max-width: 720px; margin: 0 auto; }
+        h1 { font-size: 1.5rem; margin: 0 0 0.25rem 0; }
+        .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .card { background: var(--card); border-radius: 8px; padding: 1.25rem; margin-bottom: 1rem; border: 1px solid var(--border); }
+        .card h2 { font-size: 1rem; margin: 0 0 0.75rem 0; font-weight: 600; }
+        .row { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+        input[type="file"] { font-size: 0.9rem; }
+        button { font-size: 0.9rem; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-weight: 500; }
+        button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+        button.primary:hover { filter: brightness(1.05); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .msg { font-size: 0.85rem; margin-top: 0.5rem; padding: 0.5rem; border-radius: 4px; }
+        .msg.success { background: #d1e7dd; color: #0f5132; }
+        .msg.error { background: #f8d7da; color: #842029; }
+        .msg.hide { display: none; }
+        .corrigir-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+        .nome-efd { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Correção EFD – Estoque ICMS/IPI</h1>
+        <p class="subtitle">Importe os três arquivos e execute a correção para gerar o EFD corrigido.</p>
+
+        <div class="card">
+            <h2>1. Arquivo de erros de estoque (Excel)</h2>
+            <div class="row">
+                <input type="file" id="fileErros" accept=".xlsx,.xls">
+                <button type="button" id="btnErros">Importar erros</button>
+            </div>
+            <div id="msgErros" class="msg hide"></div>
+        </div>
+
+        <div class="card">
+            <h2>2. Arquivo de produtos (Excel)</h2>
+            <div class="row">
+                <input type="file" id="fileProdutos" accept=".xlsx,.xls">
+                <button type="button" id="btnProdutos">Importar produtos</button>
+            </div>
+            <div id="msgProdutos" class="msg hide"></div>
+        </div>
+
+        <div class="card">
+            <h2>3. Arquivo EFD ICMS/IPI (texto)</h2>
+            <div class="row">
+                <input type="file" id="fileEfd" accept=".txt">
+                <button type="button" id="btnEfd">Importar EFD</button>
+            </div>
+            <div id="nomeEfdExibido" class="nome-efd hide"></div>
+            <div id="msgEfd" class="msg hide"></div>
+        </div>
+
+        <div class="card corrigir-section">
+            <h2>4. Executar correção e baixar EFD corrigido</h2>
+            <p class="subtitle" style="margin-bottom: 0.75rem;">Após importar os três arquivos, clique no botão abaixo. O arquivo será gerado e baixado automaticamente.</p>
+            <div class="row">
+                <button type="button" id="btnCorrigir" class="primary">Executar correção e baixar EFD</button>
+            </div>
+            <div id="msgCorrigir" class="msg hide"></div>
+            <div id="areaDownloadProdutosNaoEncontrados" class="hide" style="margin-top: 0.5rem;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API = '';
+        const $ = id => document.getElementById(id);
+
+        function showMsg(id, text, isError) {
+            const el = $(id);
+            el.textContent = text;
+            el.className = 'msg ' + (isError ? 'error' : 'success');
+            el.classList.remove('hide');
+        }
+        function hideMsg(id) {
+            $(id).classList.add('hide');
+        }
+
+        let nomeArquivoEfd = '';
+
+        async function upload(endpoint, fileInputId, msgId, btnId) {
+            const input = $(fileInputId);
+            const file = input?.files?.[0];
+            if (!file) {
+                showMsg(msgId, 'Selecione um arquivo.', true);
+                return;
+            }
+            const btn = $(btnId);
+            btn.disabled = true;
+            hideMsg(msgId);
+            const form = new FormData();
+            form.append('arquivo', file);
+            try {
+                const r = await fetch(API + '/api/importar/' + endpoint, { method: 'POST', body: form });
+                const data = await r.json();
+                if (r.ok && data.sucesso) {
+                    showMsg(msgId, data.mensagem + ' Registros: ' + (data.registros ?? '-') + '.', false);
+                    if (endpoint === 'efd') {
+                        nomeArquivoEfd = file.name;
+                        const nomeEl = $('nomeEfdExibido');
+                        nomeEl.textContent = 'Nome para o EFD corrigido: ' + nomeArquivoEfd.replace(/\.[^.]+$/, '') + 'CORRIGIDO.txt';
+                        nomeEl.classList.remove('hide');
+                    }
+                } else {
+                    showMsg(msgId, data.mensagem || 'Erro na importação.', true);
+                }
+            } catch (e) {
+                showMsg(msgId, 'Erro de rede: ' + e.message, true);
+            }
+            btn.disabled = false;
+        }
+
+        $('btnErros').addEventListener('click', () => upload('erros', 'fileErros', 'msgErros', 'btnErros'));
+        $('btnProdutos').addEventListener('click', () => upload('produtos', 'fileProdutos', 'msgProdutos', 'btnProdutos'));
+        $('btnEfd').addEventListener('click', () => upload('efd', 'fileEfd', 'msgEfd', 'btnEfd'));
+
+        $('btnCorrigir').addEventListener('click', async () => {
+            const btn = $('btnCorrigir');
+            hideMsg('msgCorrigir');
+            $('areaDownloadProdutosNaoEncontrados').classList.add('hide');
+            $('areaDownloadProdutosNaoEncontrados').innerHTML = '';
+            btn.disabled = true;
+            const url = API + '/api/corrigir' + (nomeArquivoEfd ? '?nomeArquivoEfd=' + encodeURIComponent(nomeArquivoEfd) : '');
+            try {
+                const r = await fetch(url, { method: 'POST' });
+                const contentType = r.headers.get('Content-Type') || '';
+                if (r.ok && contentType.includes('octet-stream')) {
+                    const blob = await r.blob();
+                    const disposition = r.headers.get('Content-Disposition');
+                    let filename = 'EFD-CORRIGIDO.txt';
+                    if (disposition) {
+                        const m = disposition.match(/filename="?([^";]+)"?/);
+                        if (m) filename = m[1];
+                    }
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    showMsg('msgCorrigir', 'Correção concluída. Arquivo "' + filename + '" baixado.', false);
+                } else {
+                    const text = await r.text();
+                    let data;
+                    try { data = JSON.parse(text); } catch (_) { data = { mensagem: text }; }
+                    showMsg('msgCorrigir', data.mensagem || 'Erro ao executar correção.', true);
+                    if (r.status === 422 && data.produtos && data.arquivoCsv) {
+                        const area = $('areaDownloadProdutosNaoEncontrados');
+                        const nomeArquivo = data.nomeArquivoDownload || 'produtos-erro-nao-encontrados.csv';
+                        const botaoDownload = document.createElement('button');
+                        botaoDownload.type = 'button';
+                        botaoDownload.textContent = 'Baixar lista de produtos não encontrados (código e descrição)';
+                        botaoDownload.addEventListener('click', () => {
+                            const blob = new Blob(['\ufeff' + data.arquivoCsv], { type: 'text/csv;charset=utf-8' });
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = nomeArquivo;
+                            a.click();
+                            URL.revokeObjectURL(a.href);
+                        });
+                        area.appendChild(botaoDownload);
+                        area.classList.remove('hide');
+                    }
+                }
+            } catch (e) {
+                showMsg('msgCorrigir', 'Erro de rede: ' + e.message, true);
+            }
+            btn.disabled = false;
+        });
+    </script>
+</body>
+</html>
