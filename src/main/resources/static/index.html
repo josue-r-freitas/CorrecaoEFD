@@ -33,6 +33,7 @@
         .msg.hide { display: none; }
         .corrigir-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
         .nome-efd { font-size: 0.85rem; color: var(--muted); margin-top: 0.25rem; }
+        .origem-arquivo { font-size: 0.8rem; color: var(--muted); margin-top: 0.35rem; word-break: break-all; }
     </style>
 </head>
 <body>
@@ -46,6 +47,7 @@
                 <input type="file" id="fileErros" accept=".xlsx,.xls">
                 <button type="button" id="btnErros">Importar erros</button>
             </div>
+            <div id="origemErros" class="origem-arquivo hide"></div>
             <div id="msgErros" class="msg hide"></div>
         </div>
 
@@ -55,6 +57,7 @@
                 <input type="file" id="fileProdutos" accept=".xlsx,.xls">
                 <button type="button" id="btnProdutos">Importar produtos</button>
             </div>
+            <div id="origemProdutos" class="origem-arquivo hide"></div>
             <div id="msgProdutos" class="msg hide"></div>
         </div>
 
@@ -64,6 +67,7 @@
                 <input type="file" id="fileEfd" accept=".txt">
                 <button type="button" id="btnEfd">Importar EFD</button>
             </div>
+            <div id="origemEfd" class="origem-arquivo hide"></div>
             <div id="nomeEfdExibido" class="nome-efd hide"></div>
             <div id="msgEfd" class="msg hide"></div>
         </div>
@@ -94,6 +98,24 @@
         }
 
         let nomeArquivoEfd = '';
+
+        function atualizarOrigem(inputId, origemId) {
+            const input = $(inputId);
+            const el = $(origemId);
+            const file = input?.files?.[0];
+            if (!file) {
+                el.classList.add('hide');
+                el.textContent = '';
+                return;
+            }
+            const caminho = input.value || file.name;
+            el.textContent = 'Origem: ' + caminho;
+            el.classList.remove('hide');
+        }
+
+        $('fileErros').addEventListener('change', () => atualizarOrigem('fileErros', 'origemErros'));
+        $('fileProdutos').addEventListener('change', () => atualizarOrigem('fileProdutos', 'origemProdutos'));
+        $('fileEfd').addEventListener('change', () => atualizarOrigem('fileEfd', 'origemEfd'));
 
         async function upload(endpoint, fileInputId, msgId, btnId) {
             const input = $(fileInputId);
